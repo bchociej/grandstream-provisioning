@@ -1,25 +1,25 @@
 # Standards applicability and compliance
 
-The canonical collection is [bchociej/app-standards](https://github.com/bchociej/app-standards).
+The canonical collection is [bchociej/dev-standards](https://github.com/bchociej/dev-standards).
 This project adopts revision
-[`563e23ec99a8faf2db47d9ccff1e3462558e20a2`](https://github.com/bchociej/app-standards/tree/563e23ec99a8faf2db47d9ccff1e3462558e20a2).
-The [complete standards index at that revision](https://github.com/bchociej/app-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/README.md)
+[`563e23ec99a8faf2db47d9ccff1e3462558e20a2`](https://github.com/bchociej/dev-standards/tree/563e23ec99a8faf2db47d9ccff1e3462558e20a2).
+The [complete standards index at that revision](https://github.com/bchociej/dev-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/README.md)
 is the entry point, including for standards added to the collection later.
 
 | Standard | Version | Application here |
 | --- | --- | --- |
-| [BAS-001: Repository and development fundamentals](https://github.com/bchociej/app-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/bas-001-repository-and-development-fundamentals.md) | 1 | Applies to the entire repository, public source, tooling, and CI. |
-| [CAS-001: Container application repositories](https://github.com/bchociej/app-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/cas-001-container-application-repositories.md) | 1 | Applies to image assembly and Compose/Kubernetes deployment. Inherits BAS-001. |
+| [BAS-001: Repository and development fundamentals](https://github.com/bchociej/dev-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/bas-001-repository-and-development-fundamentals.md) | 1 | Applies to the entire repository, public source, tooling, and CI. |
+| [CAS-001: Container application repositories](https://github.com/bchociej/dev-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/cas-001-container-application-repositories.md) | 1 | Applies to image assembly and Compose/Kubernetes deployment. Inherits BAS-001. |
 
 ## Maintaining the reference
 
 Standards are maintained independently. Do not copy or vendor their text, require
 a Git submodule for runtime/builds, or change the standards repo during app work.
-A sibling checkout named `standards` is convenient but optional. For example,
+A sibling checkout named `dev-standards` is convenient but optional. For example,
 from this repository root, inspect the adopted index with:
 
 ```sh
-git -C ../standards show 563e23ec99a8faf2db47d9ccff1e3462558e20a2:README.md
+git -C ../dev-standards show 563e23ec99a8faf2db47d9ccff1e3462558e20a2:README.md
 ```
 
 When adopting an update, review the collection's index and all relevant standards,

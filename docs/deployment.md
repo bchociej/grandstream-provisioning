@@ -1,6 +1,6 @@
 # Operating this application
 
-This application follows the adopted [app-standards repository](standards.md),
+This application follows the adopted [dev-standards repository](standards.md),
 including BAS-001 version 1 and CAS-001 version 1. That page records the exact
 standards revision and applicability. This file supplies the concrete operating
 commands and deployment-specific choices.

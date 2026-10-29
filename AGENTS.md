@@ -1,11 +1,11 @@
 # Repository guidance
 
 This project follows the separately maintained
-[app-standards repository](https://github.com/bchociej/app-standards).
+[dev-standards repository](https://github.com/bchociej/dev-standards).
 Read [docs/standards.md](docs/standards.md) for its adopted Git revision, index,
 applicable standards, and project-specific operating choices before changing code,
 CI, image assembly, or deployment definitions. Read the applicable standards at
-that revision; a sibling `../standards` checkout can supply them via `git show`.
+that revision; a sibling `../dev-standards` checkout can supply them via `git show`.
 Use the pinned canonical links if that checkout is unavailable. Do not assume
 that the other checkout's working tree matches the adopted revision.
 
