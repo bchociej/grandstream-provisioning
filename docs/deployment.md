@@ -1,6 +1,6 @@
 # Operating this application
 
-This application follows **CAS-001 version 1**, standards revision `5f2f5a7`:
+This application follows **CAS-001 version 1**, standards revision `21b4adc`:
 [container application repositories](../../standards/container-applications.md).
 The standards checkout is a sibling of this repo; it has no published canonical
 URL yet. This file supplies this application's concrete commands and exceptions.
