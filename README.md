@@ -5,15 +5,24 @@ web admin, application framework, or runtime Python packages. Devices fetch stat
 `/cfg<lowercase-mac>.xml` files. Unknown devices and generic/model fallback requests
 receive 404, so a shared fallback cannot accidentally distribute SIP credentials.
 
+This repo follows **CAS-001 version 1**, standards revision `5f2f5a7`:
+[Container application repositories](../standards/container-applications.md)
+(sibling standards checkout; canonical hosted URL not yet configured).
+Image files live in `container/`; Compose and Kubernetes definitions live under
+`deploy/`. See [deployment operations](docs/deployment.md) for the single-replica
+contract, private source layout, preflight, update/restart, and rollback commands.
+
 ## Start
 
 ```sh
 cp -r examples config
-mkdir -p config/secrets
+mkdir -p config/secrets roots
 printf '%s\n' 'replace-with-real-password' > config/secrets/1001.txt
 chmod -R go-rwx config
 # Change devices.toml MAC, SIP server, user, and password before starting.
-docker compose up --build -d
+docker compose -f deploy/compose/compose.yaml build
+docker compose -f deploy/compose/compose.yaml run --rm --no-deps provisioning render
+docker compose -f deploy/compose/compose.yaml up -d --force-recreate --wait
 ```
 
 The default binding is localhost for a TLS reverse proxy. Route a dedicated HTTPS
@@ -50,18 +59,21 @@ intentionally empty: populate its profiles and four port mappings from the offic
 configuration template for your exact firmware; the renderer supports independent
 values/secrets for every port without imposing a guessed mapping.
 
-After editing:
+After editing, preflight in a separate container, then recreate the serving
+instance so startup rendering applies one reviewed snapshot:
 
 ```sh
-docker compose exec provisioning python3 /app/provision.py render
+docker compose -f deploy/compose/compose.yaml run --rm --no-deps provisioning render
+docker compose -f deploy/compose/compose.yaml up -d --force-recreate --wait
 ```
 
 Rendering validates all devices and switches one directory symlink atomically.
-A failed render keeps the current generation. Startup failures stop the container.
+A preflight failure leaves the running instance untouched. Startup failures stop
+the replacement instance; restore the last good source snapshot to recover.
 Existing devices fetch changes on their configured provisioning schedule or manual
-provision/reboot; this service does not push or reboot them. Old `generation-*`
-directories are retained for rollback and must be pruned by the operator; they can
-contain obsolete passwords. Never expose the rendered volume through another server.
+provision/reboot; this service does not push or reboot them. Generated files live in ephemeral
+local memory storage and disappear on instance replacement. Back up source snapshots privately for rollback; do not expose
+generated output through another server.
 
 ## Root certificates
 
@@ -75,8 +87,10 @@ are not fully represented in PEM; selecting a root does not replicate Firefox's
 trust policy.
 
 ```sh
-# Works before the serving container exists, too:
-docker compose run --rm provisioning refresh-roots
+# After building the image; this does not restart the serving instance.
+docker run --rm --user "$(id -u):$(id -g)" \
+  --mount "type=bind,src=$PWD/roots,dst=/roots" \
+  grandstream-provisioning:local refresh-roots
 ```
 
 This refreshes `/roots/current`, **not** device configuration. Identify the root(s)
@@ -107,8 +121,9 @@ if Mozilla removes one, the next render fails instead of silently retaining it.
 Previously published XML stays available until you review and replace that trust.
 Check root validity dates and provider compatibility before promotion. Root refresh
 is explicit, with no Internet dependency during service startup or rendering.
-Schedule `refresh-roots` followed by `render` with your host scheduler if wanted;
-alert on failure. Rebuild the image regularly to update the downloader's own OS trust.
+If scheduling root maintenance, alert on failure and promote a reviewed inventory
+through the same preflight/recreate workflow; do not edit the running instance.
+Rebuild the image regularly to update the downloader's own OS trust.
 A SHA-256 pin identifies the certificate: when a CA rotates its key/certificate, a
 new fingerprint requires review rather than automatic substitution by subject name.
 

@@ -1,8 +1,9 @@
-# Only the files required to build the image enter the build context.
+# Build from the repository root; only application/image files enter the context.
 **
-!Dockerfile
 !.dockerignore
 !app/
 !app/provision.py
-!nginx.conf
-!entrypoint.sh
+!container/
+!container/Dockerfile
+!container/nginx.conf
+!container/entrypoint.sh

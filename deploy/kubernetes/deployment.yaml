@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grandstream-provisioning
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grandstream-provisioning
+  template:
+    metadata:
+      labels:
+        app: grandstream-provisioning
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: provisioning
+          # Replace with an immutable image reference in your private overlay.
+          image: grandstream-provisioning:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: source
+              mountPath: /config
+              readOnly: true
+            - name: roots
+              mountPath: /roots/current
+              readOnly: true
+            - name: rendered
+              mountPath: /srv/provision
+      volumes:
+        - name: source
+          secret:
+            secretName: provisioning-source
+        - name: roots
+          configMap:
+            name: provisioning-roots
+        - name: rendered
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
