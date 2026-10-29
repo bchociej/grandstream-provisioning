@@ -5,12 +5,23 @@ web admin, application framework, or runtime Python packages. Devices fetch stat
 `/cfg<lowercase-mac>.xml` files. Unknown devices and generic/model fallback requests
 receive 404, so a shared fallback cannot accidentally distribute SIP credentials.
 
-This repository follows the [dev-standards repository](https://github.com/bchociej/dev-standards),
-adopted at revision [`563e23e`](https://github.com/bchociej/dev-standards/tree/563e23ec99a8faf2db47d9ccff1e3462558e20a2).
-Applicable standards: [BAS-001 version 1](https://github.com/bchociej/dev-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/bas-001-repository-and-development-fundamentals.md)
-and [CAS-001 version 1](https://github.com/bchociej/dev-standards/blob/563e23ec99a8faf2db47d9ccff1e3462558e20a2/cas-001-container-application-repositories.md).
-See [standards applicability and compliance](docs/standards.md) for the full index,
-local checkout guidance, review process, and project-specific decisions.
+## Applied standards
+
+Standards source: [bchociej/dev-standards](https://github.com/bchociej/dev-standards).
+Read its current [index](https://github.com/bchociej/dev-standards/blob/main/README.md)
+and [adoption guide](https://github.com/bchociej/dev-standards/blob/main/docs/adopting.md)
+for discovery and process. Adopted requirements are resolved individually below.
+
+| Standard | Version spec | Resolved version | Source ref and path | Status |
+| --- | --- | --- | --- | --- |
+| BAS-001 | `^5.0.0` | 5.0.0 | [`894bf01:bas-001-repository-and-development-fundamentals.md`](https://github.com/bchociej/dev-standards/blob/894bf013623224066a3a99ed1d9f14c2b1bd7c67/bas-001-repository-and-development-fundamentals.md) | Adopted |
+| BAS-002 | `^3.0.0` | 3.0.0 | [`894bf01:bas-002-recording-standards-adoption.md`](https://github.com/bchociej/dev-standards/blob/894bf013623224066a3a99ed1d9f14c2b1bd7c67/bas-002-recording-standards-adoption.md) | Adopted |
+| CAS-001 | `^4.0.0` | 4.0.0 | [`894bf01:cas-001-container-application-repositories.md`](https://github.com/bchociej/dev-standards/blob/894bf013623224066a3a99ed1d9f14c2b1bd7c67/cas-001-container-application-repositories.md) | Adopted |
+
+See [adoption notes](docs/standards.md) for resolved source commits, migration,
+verification, and deployment-environment limitations. No standards exceptions
+or outstanding repository changes are required by the recorded resolutions.
+A matching future version does not authorize automatic upgrades or remediation.
 
 Image files live in `container/`; Compose and Kubernetes definitions live under
 `deploy/`. See [deployment operations](docs/deployment.md) for the single-replica
