@@ -1,13 +1,16 @@
 # Operating this application
 
-This application follows **BAS-001 version 1**
-([fundamentals](../../standards/bas-001-repository-and-development-fundamentals.md)) and **CAS-001 version 1**
-([container application repositories](../../standards/cas-001-container-application-repositories.md)),
-standards revision `563e23e`.
-The standards checkout is a sibling of this repo; it has no published canonical
-URL yet. This file supplies this application's concrete commands and exceptions.
+This application follows the adopted [app-standards repository](standards.md),
+including BAS-001 version 1 and CAS-001 version 1. That page records the exact
+standards revision and applicability. This file supplies the concrete operating
+commands and deployment-specific choices.
 
 ## Runtime contract
+
+Target Linux/amd64 for image builds, Compose hosts, and Kubernetes nodes. Compose
+sets `platform: linux/amd64`; Kubernetes selects Linux/amd64 nodes. Build directly
+from the repository root with
+`docker build --platform linux/amd64 -f container/Dockerfile -t grandstream-provisioning:local .`.
 
 One instance serves configuration. Startup reads `/config/devices.toml`, its
 referenced templates/secrets, and any selected PEM roots under `/roots/current`.
@@ -18,11 +21,11 @@ until valid sources are restored; ephemeral output is not a fallback backup.
 
 `/config` and `/roots` are read-only inputs. Generated output is disposable and
 contains SIP secrets: Compose uses tmpfs and Kubernetes uses a memory-backed
-emptyDir, limited to 64 MiB. Compose container recreation and Kubernetes Pod replacement discard it, as does
-host/node loss. An in-Pod container restart can retain emptyDir contents, but
-startup still validates and renders before serving. No PVC or shared writer is needed. Historical generations disappear when the containing
-tmpfs/Pod volume is discarded. Back up source snapshots and required
-root inventories privately, not generated volumes. Do not scale this deployment.
+emptyDir, limited to 64 MiB. Compose container recreation and Kubernetes Pod
+replacement discard it, as does host/node loss. An in-Pod container restart can
+retain emptyDir contents, but startup still validates and renders before serving. No PVC or shared writer is
+needed. Historical generations disappear when the containing tmpfs/Pod volume
+is discarded. Back up source snapshots and required root inventories privately, not generated volumes. Do not scale this deployment.
 
 Compose runs one instance; Kubernetes uses one replica and `Recreate`. Expect a
 brief outage on updates. Serving does not fetch roots or depend on Internet access
@@ -58,7 +61,7 @@ For TLS configurations, fetch the current Mozilla inventory explicitly, using th
 same built image. The unprivileged updater keeps host files owned by the operator:
 
 ```sh
-docker run --rm --user "$(id -u):$(id -g)" \
+docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
   --mount "type=bind,src=$PWD/roots,dst=/roots" \
   grandstream-provisioning:local refresh-roots
 ```
@@ -92,8 +95,8 @@ and running the same recreate/verify commands. Merely restarting does not undo e
 The base is `deploy/kubernetes/`. Select an image available to your cluster and use
 a private Kustomize overlay, kept under ignored `config/kubernetes/` or in a
 configuration store outside SCM. Separate deployment repositories may track
-sanitized manifests, but actual inventory and secrets stay outside SCM. Pin the image by digest. Do not apply the base's local image
-placeholder to a production cluster. Configure registry authentication separately
+sanitized manifests, but actual inventory and secrets stay outside SCM. Pin the
+image by digest. Do not apply the base's local image placeholder to a production cluster. Configure registry authentication separately
 if required. No Kubernetes cluster or live deployment is assumed by this repo.
 
 Kubernetes mounts the inventory/templates/credentials as one generated Secret and
@@ -155,7 +158,7 @@ inventory and the exact target image before applying:
 ```sh
 # Replace the image variable with the intended registry digest reference.
 image='registry.example.net/grandstream-provisioning@sha256:REPLACE_WITH_DIGEST'
-docker run --rm \
+docker run --rm --platform linux/amd64 \
   --mount "type=bind,src=$PWD/config/kubernetes/source,dst=/config,readonly" \
   --mount "type=bind,src=$PWD/roots,dst=/roots,readonly" \
   --tmpfs /srv/provision:mode=0755,size=64m \
@@ -166,7 +169,7 @@ Ensure the overlay's selected PEM files match that validated current inventory;
 then preflight once more against the exact files to be mounted:
 
 ```sh
-docker run --rm \
+docker run --rm --platform linux/amd64 \
   --mount "type=bind,src=$PWD/config/kubernetes/source,dst=/config,readonly" \
   --mount "type=bind,src=$PWD/config/kubernetes/roots,dst=/roots/current,readonly" \
   --tmpfs /srv/provision:mode=0755,size=64m \

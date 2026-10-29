@@ -2,6 +2,7 @@ name: grandstream-provisioning
 
 services:
   provisioning:
+    platform: linux/amd64
     image: grandstream-provisioning:local
     build:
       context: ../..
