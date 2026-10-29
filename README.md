@@ -5,9 +5,11 @@ web admin, application framework, or runtime Python packages. Devices fetch stat
 `/cfg<lowercase-mac>.xml` files. Unknown devices and generic/model fallback requests
 receive 404, so a shared fallback cannot accidentally distribute SIP credentials.
 
-This repo follows **CAS-001 version 1**, standards revision `ef6dbe7`:
-[Container application repositories](../standards/container-applications.md)
-(sibling standards checkout; canonical hosted URL not yet configured).
+This repo follows **BAS-001 version 1**
+([Repository and development fundamentals](../standards/fundamentals.md)) and
+**CAS-001 version 1**
+([Container application repositories](../standards/container-applications.md)),
+standards revision `372ce21` (sibling checkout; canonical hosted URL not yet configured).
 Image files live in `container/`; Compose and Kubernetes definitions live under
 `deploy/`. See [deployment operations](docs/deployment.md) for the single-replica
 contract, private source layout, preflight, update/restart, and rollback commands.

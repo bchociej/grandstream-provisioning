@@ -1,7 +1,9 @@
 # Operating this application
 
-This application follows **CAS-001 version 1**, standards revision `ef6dbe7`:
-[container application repositories](../../standards/container-applications.md).
+This application follows **BAS-001 version 1**
+([fundamentals](../../standards/fundamentals.md)) and **CAS-001 version 1**
+([container application repositories](../../standards/container-applications.md)),
+standards revision `372ce21`.
 The standards checkout is a sibling of this repo; it has no published canonical
 URL yet. This file supplies this application's concrete commands and exceptions.
 
@@ -62,7 +64,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
 ```
 
 Before changing a working deployment, record its image ID/digest and save a private
-copy or private Git revision of `config/` and `roots/`. Make source edits while no
+backup snapshot of `config/` and `roots/` outside SCM. Make source edits while no
 other operator or scheduled updater is modifying them. Validate and replace:
 
 ```sh
@@ -88,8 +90,9 @@ and running the same recreate/verify commands. Merely restarting does not undo e
 ## Kubernetes
 
 The base is `deploy/kubernetes/`. Select an image available to your cluster and use
-a private Kustomize overlay, kept under ignored `config/kubernetes/` or in a private
-deployment repository. Pin the image by digest. Do not apply the base's local image
+a private Kustomize overlay, kept under ignored `config/kubernetes/` or in a
+configuration store outside SCM. Separate deployment repositories may track
+sanitized manifests, but actual inventory and secrets stay outside SCM. Pin the image by digest. Do not apply the base's local image
 placeholder to a production cluster. Configure registry authentication separately
 if required. No Kubernetes cluster or live deployment is assumed by this repo.
 
