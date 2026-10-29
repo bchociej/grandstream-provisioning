@@ -125,10 +125,44 @@ found SIP identity-check differences with IP-only SANs.
 
 ## Verification and references
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then sync
+the development environment from the committed lockfile:
+
 ```sh
-python3 -m unittest discover -s tests -v
-docker build -t grandstream-provisioning:local .
+uv sync --locked
 ```
+
+uv creates `.venv` and uses Python 3.12 from `.python-version`, downloading Python
+if necessary. No separate pip or virtualenv setup is required. Ruff settings and
+the `dev` dependency group live in `pyproject.toml`; `shellcheck-py` supplies the
+ShellCheck executable. The project is not packaged or installed, and its runtime
+dependency list is empty. The Docker runtime continues to use only Python's
+standard library, without uv or the development tools.
+
+Run the same checks as GitHub Actions:
+
+```sh
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+git ls-files -z '*.sh' | xargs -0 -r uv run --locked shellcheck
+uv run --locked python -m unittest discover -s tests -v
+```
+
+To apply Python import/lint fixes and formatting locally:
+
+```sh
+uv run --locked ruff check --fix .
+uv run --locked ruff format .
+```
+
+Use `uv add --dev <tool>` to add development tools. After intentionally changing
+dependency constraints, run `uv lock` and commit both `pyproject.toml` and `uv.lock`.
+CI uses `--locked` so inconsistent metadata and lockfiles fail rather than silently
+updating the lockfile.
+
+The Checks workflow runs on pushes, pull requests, and manual dispatch using
+Python 3.12. It runs tests, Ruff lint/format checks, and ShellCheck for every tracked
+`.sh` file. It has no image build or publishing phase.
 
 - [Grandstream XML provisioning guide](https://documentation.grandstream.com/knowledge-base/sip-device-provisioning-guide/)
 - [HT812/HT814 administration](https://documentation.grandstream.com/knowledge-base/ht812-ht814-administration-guide/)

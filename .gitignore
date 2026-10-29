@@ -33,3 +33,6 @@ docker-compose.override.yml
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# Linter cache
+.ruff_cache/
