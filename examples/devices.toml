@@ -1,0 +1,19 @@
+[defaults]
+sip_server = "sip.example.net"
+
+[profiles.ht801]
+model = "ht801"
+template = "templates/ht801.xml"
+
+[profiles.ht814]
+model = "ht814"
+template = "templates/ht814.xml"
+
+[devices."00:0b:82:01:02:03"]
+model = "ht801"
+profile = "ht801"
+[devices."00:0b:82:01:02:03".values]
+sip_user = "1001"
+sip_auth = "1001"
+[devices."00:0b:82:01:02:03".secrets]
+sip_password = "secrets/1001.txt"

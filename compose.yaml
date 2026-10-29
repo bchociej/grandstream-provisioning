@@ -1,0 +1,15 @@
+services:
+  provisioning:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./config:/config:ro
+      - roots:/roots
+      - rendered:/srv/provision
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  roots:
+  rendered:

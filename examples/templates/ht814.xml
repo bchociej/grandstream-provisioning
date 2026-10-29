@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gs_provision version="1">
+  <mac>{{ mac }}</mac>
+  <config version="1">
+    <!-- Insert reviewed HT814 profile and FXS-port P-values from its firmware template. -->
+  </config>
+</gs_provision>

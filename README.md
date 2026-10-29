@@ -1,0 +1,145 @@
+# Grandstream provisioning
+
+A small Alpine image with nginx, Python's standard library, and OpenSSL. No database,
+web admin, application framework, or runtime Python packages. Devices fetch static
+`/cfg<lowercase-mac>.xml` files. Unknown devices and generic/model fallback requests
+receive 404, so a shared fallback cannot accidentally distribute SIP credentials.
+
+## Start
+
+```sh
+cp -r examples config
+mkdir -p config/secrets
+printf '%s\n' 'replace-with-real-password' > config/secrets/1001.txt
+chmod -R go-rwx config
+# Change devices.toml MAC, SIP server, user, and password before starting.
+docker compose up --build -d
+```
+
+The default binding is localhost for a TLS reverse proxy. Route a dedicated HTTPS
+hostname to port 8080; the proxy must preserve the request path. Alternatively bind
+8080 to a specific VPN/LAN address for initial isolated bootstrap. Restrict access
+with host/VPN firewall rules to the ATA subnets. MAC addresses are identifiers, not
+passwords: any client allowed to reach this service can request another unit's XML.
+A shared VPN alone doesn't provide per-device authorization. Use supported device
+HTTP authentication and proxy authentication if that separation is needed.
+
+Set each ATA's Config Server Path to the chosen hostname/path, using the appropriate
+HTTPS selection for that firmware. Route and resolve that hostname from every VPN
+site; no broadcast discovery or same-subnet dependency is involved. Establish correct
+NTP time before testing TLS. Keep firmware hosting separate: this image serves no
+firmware. Review GDMS, DHCP provisioning overrides, and other management sources so
+they do not overwrite these settings. Omitted P-values retain existing device values;
+these templates do not reset an ATA to a known baseline.
+
+## Templates and devices
+
+`devices.toml` selects a model and named profile by normalized MAC. Profiles select
+an XML file, defaults, and optional root fingerprints. Values merge in order:
+global defaults, profile values, device values, then device secret files. Secret
+paths are relative to `/config`; only trailing CR/LF is stripped. Keep the whole
+config directory private and out of version control. Treat rendered Docker volumes
+and backups as credentials too.
+
+Templates support only `{{ name }}` and `{{ nested.name }}`; every substitution is
+XML-escaped. Missing values fail the whole render. There are no raw expressions,
+conditionals, includes, or executable template code. Use separate profiles for
+meaningfully different configurations. Arbitrary model-specific P-values remain
+plain XML. HT801's sample config provisions its one SIP account. HT814's starter is
+intentionally empty: populate its profiles and four port mappings from the official
+configuration template for your exact firmware; the renderer supports independent
+values/secrets for every port without imposing a guessed mapping.
+
+After editing:
+
+```sh
+docker compose exec provisioning python3 /app/provision.py render
+```
+
+Rendering validates all devices and switches one directory symlink atomically.
+A failed render keeps the current generation. Startup failures stop the container.
+Existing devices fetch changes on their configured provisioning schedule or manual
+provision/reboot; this service does not push or reboot them. Old `generation-*`
+directories are retained for rollback and must be pruned by the operator; they can
+contain obsolete passwords. Never expose the rendered volume through another server.
+
+## Root certificates
+
+Use Mozilla's public TLS root inventory, converted and distributed by the curl
+project at **https://curl.se/ca/cacert.pem**. The downloader uses system-verified HTTPS,
+rejects redirects, bounds download size, parses every certificate with OpenSSL,
+and writes a complete new inventory before switching it into place. The manifest
+records source, count, and bundle SHA-256. This is HTTPS-authenticated distribution,
+not an independently signed bundle. Mozilla browser-specific trust constraints
+are not fully represented in PEM; selecting a root does not replicate Firefox's
+trust policy.
+
+```sh
+# Works before the serving container exists, too:
+docker compose run --rm provisioning refresh-roots
+```
+
+This refreshes `/roots/current`, **not** device configuration. Identify the root(s)
+actually required by your SIP/provisioning providers using their authoritative chain
+documentation. Review the SHA-256 fingerprint, then add a profile mapping:
+
+```toml
+[profiles.ht801.roots]
+a = "64-hex-digit-sha256-fingerprint-without-separators"
+# b = "another-reviewed-root-fingerprint"
+```
+
+Add explicit XML parameters to the appropriate template:
+
+```xml
+<P2386>{{ ca.a }}</P2386>
+<!-- <P2486>{{ ca.b }}</P2486> -->
+```
+
+Each slot supplies one PEM certificate. Do not upload the full browser bundle:
+certificate count, size limits, and chain handling need testing on actual firmware.
+The renderer requires selected roots to exist in the **current** upstream inventory;
+if Mozilla removes one, the next render fails instead of silently retaining it.
+Previously published XML stays available until you review and replace that trust.
+Check root validity dates and provider compatibility before promotion. Root refresh
+is explicit, with no Internet dependency during service startup or rendering.
+Schedule `refresh-roots` followed by `render` with your host scheduler if wanted;
+alert on failure. Rebuild the image regularly to update the downloader's own OS trust.
+A SHA-256 pin identifies the certificate: when a CA rotates its key/certificate, a
+new fingerprint requires review rather than automatic substitution by subject name.
+
+On the tested HT801 1.0.65.3, a device-level investigation found provisioning certificate
+validation (`P8463=1`), hostname verification (`P22030=1`), and trust selection
+(`P8502`: 0 built-in, 1 custom, 2 combined). Custom-only avoids trusting old built-in
+roots, but only enable it after installing and verifying every necessary custom CA.
+Combined mode still trusts the firmware's built-in roots. These settings are not
+automatically emitted: bootstrap first, verify a successful HTTPS fetch, then enable
+verification in a staged profile while keeping a recovery path. Shipping a PEM file
+at a URL alone does not install trust; it must be embedded in the supported P-values.
+
+SIP/ACS switch testing was still ongoing when this was written.
+Do not infer that provisioning switches secure every TLS client, or that certificate
+validation provides revocation checks. Confirm final findings and independently test
+HT814 before rollout. Use a DNS hostname with matching DNS SANs; device testing
+found SIP identity-check differences with IP-only SANs.
+
+## Verification and references
+
+```sh
+python3 -m unittest discover -s tests -v
+docker build -t grandstream-provisioning:local .
+```
+
+- [Grandstream XML provisioning guide](https://documentation.grandstream.com/knowledge-base/sip-device-provisioning-guide/)
+- [HT812/HT814 administration](https://documentation.grandstream.com/knowledge-base/ht812-ht814-administration-guide/)
+- [Mozilla CA extraction and limitations](https://curl.se/docs/caextract.html)
+
+## Keeping deployments private
+
+Only synthetic example identities belong in this repository. Keep actual device
+inventories, SIP credentials, and secret files under ignored `config/` and do not
+force-add them. Generated configuration, private keys, local environment files,
+and local Compose overrides are ignored too. The Docker build context is an
+allowlist of application files; deployment data cannot enter it accidentally.
+Before publishing changes, inspect `git diff --cached` for secrets and site details.
+Git ignore rules do not protect files already tracked or remove historical secrets.

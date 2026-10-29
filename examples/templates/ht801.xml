@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gs_provision version="1">
+  <mac>{{ mac }}</mac>
+  <config version="1">
+    <P271>1</P271>
+    <P47>{{ sip_server }}</P47>
+    <P35>{{ sip_user }}</P35>
+    <P36>{{ sip_auth }}</P36>
+    <P34>{{ sip_password }}</P34>
+  </config>
+</gs_provision>
