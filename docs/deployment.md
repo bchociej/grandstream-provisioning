@@ -1,9 +1,9 @@
 # Operating this application
 
 This application follows **BAS-001 version 1**
-([fundamentals](../../standards/fundamentals.md)) and **CAS-001 version 1**
-([container application repositories](../../standards/container-applications.md)),
-standards revision `372ce21`.
+([fundamentals](../../standards/bas-001-repository-and-development-fundamentals.md)) and **CAS-001 version 1**
+([container application repositories](../../standards/cas-001-container-application-repositories.md)),
+standards revision `563e23e`.
 The standards checkout is a sibling of this repo; it has no published canonical
 URL yet. This file supplies this application's concrete commands and exceptions.
 
