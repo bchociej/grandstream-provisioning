@@ -41,6 +41,42 @@ def render(template, values):
     return result
 
 
+def load_roots(cache, roots):
+    """Resolve reviewed Mozilla roots; empty entries must not imply ATA trust removal."""
+    values = {}
+    for slot, fingerprints in roots.items():
+        if slot not in ("a", "b"):
+            raise ValueError("CA slot must be a or b")
+        if isinstance(fingerprints, str):
+            fingerprints = [fingerprints]
+        if not isinstance(fingerprints, list) or not fingerprints:
+            raise ValueError("CA slot requires at least one root fingerprint")
+        certificates = []
+        seen = set()
+        for fingerprint in fingerprints:
+            if not isinstance(fingerprint, str):
+                raise ValueError("Root fingerprint must be SHA-256")
+            fingerprint = fingerprint.lower().replace(":", "")
+            if not re.fullmatch("[0-9a-f]{64}", fingerprint):
+                raise ValueError("Root fingerprint must be SHA-256")
+            if fingerprint in seen:
+                raise ValueError("Duplicate root in CA slot")
+            seen.add(fingerprint)
+            cert = contained(cache, fingerprint + ".pem")
+            pem = cert.read_text()
+            actual = hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem)).hexdigest()
+            if actual != fingerprint:
+                raise ValueError("Root content does not match selected fingerprint")
+            subprocess.run(
+                ["openssl", "verify", "-CAfile", str(cert), str(cert)],
+                check=True,
+                capture_output=True,
+            )
+            certificates.append(pem.rstrip() + "\n")
+        values[slot] = "".join(certificates)
+    return values
+
+
 def generate(config, cache, output):
     data = tomllib.loads((config / "devices.toml").read_text())
     rendered = {}
@@ -63,18 +99,7 @@ def generate(config, cache, output):
         for key, filename in device.get("secrets", {}).items():
             values[key] = contained(config, filename).read_text().rstrip("\r\n")
         roots = device.get("roots", profile.get("roots", {}))
-        values["ca"] = {}
-        for slot, fingerprint in roots.items():
-            fingerprint = fingerprint.lower().replace(":", "")
-            if not re.fullmatch("[0-9a-f]{64}", fingerprint):
-                raise ValueError("Root fingerprint must be SHA-256")
-            cert = contained(cache, fingerprint + ".pem")
-            subprocess.run(
-                ["openssl", "verify", "-CAfile", str(cert), str(cert)],
-                check=True,
-                capture_output=True,
-            )
-            values["ca"][slot] = cert.read_text()
+        values["ca"] = load_roots(cache, roots)
         text = render(contained(config, profile["template"]).read_text(), values)
         root = ET.fromstring(text)
         if (

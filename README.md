@@ -96,8 +96,12 @@ Add explicit XML parameters to the appropriate template:
 <!-- <P2486>{{ ca.b }}</P2486> -->
 ```
 
-Each slot supplies one PEM certificate. Do not upload the full browser bundle:
-certificate count, size limits, and chain handling need testing on actual firmware.
+A slot accepts one fingerprint or an ordered list of fingerprints, for example
+`a = ["<first SHA-256>", "<second SHA-256>", "<third SHA-256>"]`.
+The renderer concatenates the selected PEM roots in that order. A three-root
+bundle in CA A worked after reboot on tested HT801 firmware 1.0.65.3; larger
+bundles, CA B capacity, and HT814 limits remain untested. Do not upload the full
+browser bundle. Empty bundles are rejected; omission does not remove stored trust.
 The renderer requires selected roots to exist in the **current** upstream inventory;
 if Mozilla removes one, the next render fails instead of silently retaining it.
 Previously published XML stays available until you review and replace that trust.
@@ -108,24 +112,19 @@ alert on failure. Rebuild the image regularly to update the downloader's own OS 
 A SHA-256 pin identifies the certificate: when a CA rotates its key/certificate, a
 new fingerprint requires review rather than automatic substitution by subject name.
 
-On the tested HT801 1.0.65.3, a device-level investigation found provisioning certificate
-validation (`P8463=1`), hostname verification (`P22030=1`), and trust selection
-(`P8502`: 0 built-in, 1 custom, 2 combined). Custom-only avoids trusting old built-in
-roots, but only enable it after installing and verifying every necessary custom CA.
-Combined mode still trusts the firmware's built-in roots. These settings are not
-automatically emitted: bootstrap first, verify a successful HTTPS fetch, then enable
-verification in a staged profile while keeping a recovery path. Shipping a PEM file
-at a URL alone does not install trust; it must be embedded in the supported P-values.
-
-SIP/ACS switch testing was still ongoing when this was written.
-Do not infer that provisioning switches secure every TLS client, or that certificate
-validation provides revocation checks. Confirm final findings and independently test
-HT814 before rollout. Use a DNS hostname with matching DNS SANs; device testing
-found SIP identity-check differences with IP-only SANs.
+The completed HT801 investigation confirms separate provisioning and SIP
+verification controls, shared CA-source selection, and small root bundles after
+reboot. It also found no online revocation checks on the tested TLS clients,
+unreliable live CA activation and blank-field removal, and unresolved startup
+clock behavior. See [TLS deployment and rotation](docs/tls.md) for the client
+matrix, GDMS compatibility limits, and staged rollout procedure. HT814 remains
+untested. The optional `examples/templates/ht801-tls.xml` provides an explicit
+strict HT801 profile; it is not selected by the default example inventory.
 
 ## Verification and references
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then sync
+Install OpenSSL (used by certificate checks and tests) and
+[uv](https://docs.astral.sh/uv/getting-started/installation/), then sync
 the development environment from the committed lockfile:
 
 ```sh

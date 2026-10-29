@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gs_provision version="1">
+  <mac>{{ mac }}</mac>
+  <config version="1">
+    <!-- Staged strict HT801 profile: see docs/tls.md before deploying. -->
+    <P2386>{{ ca.a }}</P2386>
+    <P8502>1</P8502>
+    <P8463>1</P8463>
+    <P22030>1</P22030>
+    <P212>2</P212>
+    <P237>{{ provisioning_server }}</P237>
+    <P271>1</P271>
+    <P47>{{ sip_server }}</P47>
+    <P35>{{ sip_user }}</P35>
+    <P36>{{ sip_auth }}</P36>
+    <P34>{{ sip_password }}</P34>
+    <P130>2</P130>
+    <P2367>1</P2367>
+    <P2311>1</P2311>
+  </config>
+</gs_provision>
